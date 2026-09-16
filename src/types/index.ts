@@ -105,6 +105,18 @@ export interface Alert {
   type: 'CRÍTICO' | 'ALTO' | 'MEDIO' | 'BAJO';
   message: string;
   date: string;
+  read?: boolean;
+  resolved?: boolean;
+  resolvedAt?: string;
+  resolvedBy?: string;
+  resolutionNotes?: string;
+  standard?: 'ISO/IEC 27001' | 'ISO/IEC 42001' | 'Integrado' | 'General';
+  category?: 'Riesgo' | 'Sistema IA' | 'Control SoA' | 'Evidencia' | 'Auditoría';
+  description?: string;
+  suggestedAction?: string;
+  sourceType?: 'risk' | 'ai_system' | 'control' | 'audit' | 'capa';
+  sourceId?: string;
+  clause?: string;
 }
 
 export interface RequirementAssessment {
@@ -228,6 +240,38 @@ export interface AuditSession {
   scope?: string;
 }
 
+export type CalendarEventCategory = 
+  | 'Auditoría' 
+  | 'Comité IA & Ética' 
+  | 'Revisión por la Dirección' 
+  | 'Vencimiento CAPA' 
+  | 'Evaluación AIA' 
+  | 'Simulacro Seguridad' 
+  | 'Capacitación' 
+  | 'Renovación Evidencia';
+
+export interface CalendarEvent {
+  id: string;
+  organizationId: string;
+  title: string;
+  description?: string;
+  date: string; // YYYY-MM-DD
+  endDate?: string;
+  time?: string; // HH:mm
+  durationMinutes?: number;
+  category: CalendarEventCategory;
+  standard: 'ISO/IEC 27001' | 'ISO/IEC 42001' | 'Integrado' | 'General';
+  status: 'Programado' | 'En Curso' | 'Completado' | 'Reprogramado' | 'Cancelado';
+  responsible: string;
+  attendees?: string[];
+  location?: string;
+  link?: string;
+  clause?: string;
+  relatedEntityId?: string;
+  relatedEntityType?: 'audit' | 'capa' | 'ai_system' | 'risk' | 'control';
+  notes?: string;
+}
+
 export interface DashboardData {
   organization: Organization;
   processes: Process[];
@@ -261,6 +305,7 @@ export interface DashboardData {
   capas?: CAPA[];
   normativeControls?: NormativeControl[];
   auditSessions?: AuditSession[];
+  calendarEvents?: CalendarEvent[];
 }
 
 export interface ImplementationAction {

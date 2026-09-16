@@ -6,6 +6,7 @@ import { Link } from 'react-router-dom';
 
 export function Topbar() {
   const data = useStore(state => state.data);
+  const unreadAlerts = data?.alerts ? data.alerts.filter(a => !a.read && !a.resolved).length : 0;
 
   return (
     <div className="h-16 bg-white border-b border-slate-200 flex items-center justify-between px-6 shrink-0">
@@ -32,9 +33,13 @@ export function Topbar() {
           />
         </div>
         
-        <Link to="/alerts" className="relative p-2 text-slate-400 hover:text-slate-600 transition-colors">
+        <Link to="/alerts" className="relative p-2 text-slate-400 hover:text-slate-600 transition-colors" title={`${unreadAlerts} alertas pendientes`}>
           <Bell className="w-5 h-5" />
-          <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-red-500 ring-2 ring-white" />
+          {unreadAlerts > 0 && (
+            <span className="absolute top-1.5 right-1.5 min-w-[16px] h-4 px-1 rounded-full bg-rose-500 text-white text-[10px] font-bold flex items-center justify-center ring-2 ring-white">
+              {unreadAlerts}
+            </span>
+          )}
         </Link>
 
         <button className="flex items-center px-3 py-1.5 bg-gradient-to-r from-teal-500 to-blue-600 text-white text-sm font-medium rounded-full shadow-sm hover:opacity-90 transition-opacity">

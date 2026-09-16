@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { DashboardData, Process, AISystem, Risk, Alert, RequirementAssessment, ControlAssessment, HealthSnapshot, ActivityLog, AuditItem, ImplementationAction, NormativeControl, Organization } from '../types';
-import { collection, query, where, getDocs, doc, getDoc, addDoc, updateDoc, setDoc, serverTimestamp } from 'firebase/firestore';
+import { collection, query, where, getDocs, doc, getDoc, addDoc, updateDoc, setDoc, deleteDoc, serverTimestamp } from 'firebase/firestore';
 import { db, auth } from '../lib/firebase';
 import { initialDashboardData } from '../data/initialData';
 
@@ -23,6 +23,15 @@ interface AppState {
   addAISystem: (system: any) => Promise<void>;
   updateNormativeControl: (id: string, updates: Partial<NormativeControl>) => Promise<void>;
   addAuditSession: (session: any) => Promise<void>;
+  markAlertAsRead: (id: string) => Promise<void>;
+  markAllAlertsAsRead: () => Promise<void>;
+  resolveAlert: (id: string, notes?: string) => Promise<void>;
+  unresolveAlert: (id: string) => Promise<void>;
+  deleteAlert: (id: string) => Promise<void>;
+  addAlert: (alert: any) => Promise<void>;
+  addCalendarEvent: (event: any) => Promise<void>;
+  updateCalendarEvent: (id: string, updates: any) => Promise<void>;
+  deleteCalendarEvent: (id: string) => Promise<void>;
 }
 
 const getStorageKey = (orgId: string) => `app_data_${orgId}`;
@@ -314,6 +323,218 @@ export const useStore = create<AppState>((set, get) => ({
     }
   },
 
+  markAlertAsRead: async (id: string) => {
+    const currentData = get().data;
+    if (!currentData || !currentData.alerts) return;
+
+    try {
+      if (auth.currentUser) {
+        const docRef = doc(db, 'alerts', id);
+        await updateDoc(docRef, { read: true });
+      }
+    } catch (e) {
+      console.warn('Firestore update skipped or failed:', e);
+    }
+
+    const updated = {
+      ...currentData,
+      alerts: currentData.alerts.map(a => a.id === id ? { ...a, read: true } : a)
+    };
+    set({ data: updated });
+    saveToLocalStorage(currentData.organization.id, updated);
+  },
+
+  markAllAlertsAsRead: async () => {
+    const currentData = get().data;
+    if (!currentData || !currentData.alerts) return;
+
+    try {
+      if (auth.currentUser) {
+        await Promise.all(
+          currentData.alerts.map(a => updateDoc(doc(db, 'alerts', a.id), { read: true }).catch(() => {}))
+        );
+      }
+    } catch (e) {
+      console.warn('Firestore bulk update skipped or failed:', e);
+    }
+
+    const updated = {
+      ...currentData,
+      alerts: currentData.alerts.map(a => ({ ...a, read: true }))
+    };
+    set({ data: updated });
+    saveToLocalStorage(currentData.organization.id, updated);
+  },
+
+  resolveAlert: async (id: string, notes?: string) => {
+    const currentData = get().data;
+    if (!currentData || !currentData.alerts) return;
+
+    const updates = {
+      resolved: true,
+      read: true,
+      resolvedAt: 'Hoy',
+      resolvedBy: auth.currentUser?.displayName || 'Oficial de Seguridad',
+      ...(notes ? { resolutionNotes: notes } : {})
+    };
+
+    try {
+      if (auth.currentUser) {
+        const docRef = doc(db, 'alerts', id);
+        await updateDoc(docRef, updates);
+      }
+    } catch (e) {
+      console.warn('Firestore update skipped or failed:', e);
+    }
+
+    const updated = {
+      ...currentData,
+      alerts: currentData.alerts.map(a => a.id === id ? { ...a, ...updates } : a)
+    };
+    set({ data: updated });
+    saveToLocalStorage(currentData.organization.id, updated);
+  },
+
+  unresolveAlert: async (id: string) => {
+    const currentData = get().data;
+    if (!currentData || !currentData.alerts) return;
+
+    const updates = {
+      resolved: false,
+      read: false,
+      resolvedAt: undefined,
+      resolvedBy: undefined
+    };
+
+    try {
+      if (auth.currentUser) {
+        const docRef = doc(db, 'alerts', id);
+        await updateDoc(docRef, { resolved: false, read: false });
+      }
+    } catch (e) {
+      console.warn('Firestore update skipped or failed:', e);
+    }
+
+    const updated = {
+      ...currentData,
+      alerts: currentData.alerts.map(a => a.id === id ? { ...a, ...updates } : a)
+    };
+    set({ data: updated });
+    saveToLocalStorage(currentData.organization.id, updated);
+  },
+
+  deleteAlert: async (id: string) => {
+    const currentData = get().data;
+    if (!currentData || !currentData.alerts) return;
+
+    const updated = {
+      ...currentData,
+      alerts: currentData.alerts.filter(a => a.id !== id)
+    };
+    set({ data: updated });
+    saveToLocalStorage(currentData.organization.id, updated);
+  },
+
+  addAlert: async (alert: any) => {
+    let id = `alert-${Date.now()}`;
+    try {
+      if (auth.currentUser) {
+        const docRef = await addDoc(collection(db, 'alerts'), {
+          ...alert,
+          createdAt: serverTimestamp()
+        });
+        id = docRef.id;
+      }
+    } catch (e) {
+      console.warn('Firestore write skipped or failed:', e);
+    }
+
+    const currentData = get().data;
+    if (currentData) {
+      const newAlert = {
+        id,
+        date: 'Hoy',
+        read: false,
+        resolved: false,
+        ...alert
+      };
+      const updated = {
+        ...currentData,
+        alerts: [newAlert, ...(currentData.alerts || [])]
+      };
+      set({ data: updated });
+      saveToLocalStorage(currentData.organization.id, updated);
+    }
+  },
+
+  addCalendarEvent: async (event: any) => {
+    let id = `cal-${Date.now()}`;
+    try {
+      if (auth.currentUser) {
+        const docRef = await addDoc(collection(db, 'calendarEvents'), {
+          ...event,
+          createdAt: serverTimestamp()
+        });
+        id = docRef.id;
+      }
+    } catch (e) {
+      console.warn('Firestore calendar write skipped or failed:', e);
+    }
+
+    const currentData = get().data;
+    if (currentData) {
+      const newEvent = { id, ...event };
+      const updated = {
+        ...currentData,
+        calendarEvents: [...(currentData.calendarEvents || []), newEvent]
+      };
+      set({ data: updated });
+      saveToLocalStorage(currentData.organization.id, updated);
+    }
+  },
+
+  updateCalendarEvent: async (id: string, updates: any) => {
+    const currentData = get().data;
+    if (!currentData || !currentData.calendarEvents) return;
+
+    try {
+      if (auth.currentUser) {
+        const docRef = doc(db, 'calendarEvents', id);
+        await updateDoc(docRef, updates);
+      }
+    } catch (e) {
+      console.warn('Firestore calendar update skipped or failed:', e);
+    }
+
+    const updated = {
+      ...currentData,
+      calendarEvents: currentData.calendarEvents.map(e => e.id === id ? { ...e, ...updates } : e)
+    };
+    set({ data: updated });
+    saveToLocalStorage(currentData.organization.id, updated);
+  },
+
+  deleteCalendarEvent: async (id: string) => {
+    const currentData = get().data;
+    if (!currentData || !currentData.calendarEvents) return;
+
+    try {
+      if (auth.currentUser) {
+        const docRef = doc(db, 'calendarEvents', id);
+        await deleteDoc(docRef);
+      }
+    } catch (e) {
+      console.warn('Firestore calendar delete skipped or failed:', e);
+    }
+
+    const updated = {
+      ...currentData,
+      calendarEvents: currentData.calendarEvents.filter(e => e.id !== id)
+    };
+    set({ data: updated });
+    saveToLocalStorage(currentData.organization.id, updated);
+  },
+
   fetchData: async (orgId: string) => {
     set({ loading: true, error: null });
 
@@ -337,7 +558,7 @@ export const useStore = create<AppState>((set, get) => ({
             'processInputs', 'processOutputs', 'processActivities', 'stakeholders', 'governanceRoles',
             'objectives', 'indicators', 'indicatorMeasurements', 'processDependencies', 'processHistory',
             'aiImpactAssessments', 'aiDataResources', 'aiLifecycleEvents', 'aiIncidents', 'aiProviders', 'aiHistory',
-            'nonConformities', 'capas', 'normativeControls', 'auditSessions'
+            'nonConformities', 'capas', 'normativeControls', 'auditSessions', 'calendarEvents'
           ];
 
           const results = await Promise.all(collectionsToFetch.map(async (coll) => {
@@ -383,6 +604,7 @@ export const useStore = create<AppState>((set, get) => ({
             capas: (results[28] as any[]).length > 0 ? (results[28] as any[]) : initialDashboardData.capas,
             normativeControls: (results[29] as any[]).length > 0 ? (results[29] as any[]) : initialDashboardData.normativeControls,
             auditSessions: (results[30] as any[]).length > 0 ? (results[30] as any[]) : initialDashboardData.auditSessions,
+            calendarEvents: (results[31] as any[]).length > 0 ? (results[31] as any[]) : initialDashboardData.calendarEvents,
           };
 
           set({ data: liveData, loading: false, error: null });
@@ -395,7 +617,11 @@ export const useStore = create<AppState>((set, get) => ({
     }
 
     // Fallback: If not found in Firestore, unauthenticated (Demo mode), or permission error, use cached or initial seed data
-    const finalData = cached || initialDashboardData;
+    const finalData = cached ? {
+      ...initialDashboardData,
+      ...cached,
+      calendarEvents: (cached.calendarEvents && cached.calendarEvents.length > 0) ? cached.calendarEvents : initialDashboardData.calendarEvents
+    } : initialDashboardData;
     set({ data: finalData, loading: false, error: null });
     saveToLocalStorage(orgId, finalData);
   }

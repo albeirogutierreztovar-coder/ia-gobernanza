@@ -13,6 +13,8 @@ import { Login } from './pages/Login';
 import { Performance } from './pages/Performance';
 import { ControlCenter } from './pages/ControlCenter';
 import { AuditWorkspace } from './pages/AuditWorkspace';
+import { CalendarPage } from './pages/CalendarPage';
+import { ReportingCenter } from './pages/ReportingCenter';
 import { Settings } from './pages/Settings';
 import { AuthProvider, useAuth } from './context/AuthContext';
 
@@ -58,8 +60,8 @@ export default function App() {
           <Route path="/documents" element={<ProtectedRoute><DocumentStudio /></ProtectedRoute>} />
           <Route path="/audit" element={<ProtectedRoute><AuditWorkspace /></ProtectedRoute>} />
           <Route path="/performance" element={<ProtectedRoute><Performance /></ProtectedRoute>} />
-          <Route path="/reports" element={<ProtectedRoute><PlaceholderPage title="Reporting Center" /></ProtectedRoute>} />
-          <Route path="/calendar" element={<ProtectedRoute><PlaceholderPage title="Calendario" /></ProtectedRoute>} />
+          <Route path="/reports" element={<ProtectedRoute><ReportingCenter /></ProtectedRoute>} />
+          <Route path="/calendar" element={<ProtectedRoute><CalendarPage /></ProtectedRoute>} />
           <Route path="/alerts" element={<ProtectedRoute><AlertCenter /></ProtectedRoute>} />
           <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
         </Routes>

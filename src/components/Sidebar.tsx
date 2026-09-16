@@ -8,6 +8,7 @@ import {
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
 import { useAuth } from '../context/AuthContext';
+import { useStore } from '../store/useStore';
 import { auth } from '../lib/firebase';
 import { signOut } from 'firebase/auth';
 
@@ -30,6 +31,8 @@ const menuItems = [
 
 export function Sidebar() {
   const { user } = useAuth();
+  const alerts = useStore(state => state.data?.alerts);
+  const unreadAlerts = alerts ? alerts.filter(a => !a.read && !a.resolved).length : 0;
   const navigate = useNavigate();
 
   const handleLogout = async () => {
@@ -62,16 +65,23 @@ export function Sidebar() {
         ))}
 
         <div className="mt-8 pt-4 border-t border-slate-800 space-y-1">
-          <NavLink to="/reports" className="flex items-center px-3 py-2 rounded-lg text-sm font-medium hover:bg-slate-800/50 hover:text-white transition-colors duration-200">
+          <NavLink to="/reports" className={({ isActive }) => cn("flex items-center px-3 py-2 rounded-lg text-sm font-medium transition-colors duration-200", isActive ? "bg-slate-800 text-teal-400" : "hover:bg-slate-800/50 hover:text-white")}>
             <BarChart2 className="w-5 h-5 mr-3 shrink-0" /> REPORTES
           </NavLink>
-          <NavLink to="/calendar" className="flex items-center px-3 py-2 rounded-lg text-sm font-medium hover:bg-slate-800/50 hover:text-white transition-colors duration-200">
+          <NavLink to="/calendar" className={({ isActive }) => cn("flex items-center px-3 py-2 rounded-lg text-sm font-medium transition-colors duration-200", isActive ? "bg-slate-800 text-teal-400" : "hover:bg-slate-800/50 hover:text-white")}>
             <Calendar className="w-5 h-5 mr-3 shrink-0" /> CALENDARIO
           </NavLink>
-          <NavLink to="/alerts" className="flex items-center px-3 py-2 rounded-lg text-sm font-medium hover:bg-slate-800/50 hover:text-white transition-colors duration-200">
-            <Bell className="w-5 h-5 mr-3 shrink-0" /> ALERTAS
+          <NavLink to="/alerts" className={({ isActive }) => cn("flex items-center justify-between px-3 py-2 rounded-lg text-sm font-medium transition-colors duration-200", isActive ? "bg-slate-800 text-teal-400" : "hover:bg-slate-800/50 hover:text-white")}>
+            <div className="flex items-center">
+              <Bell className="w-5 h-5 mr-3 shrink-0" /> ALERTAS
+            </div>
+            {unreadAlerts > 0 && (
+              <span className="px-1.5 py-0.5 rounded-full text-[10px] font-bold bg-rose-500 text-white min-w-[18px] text-center">
+                {unreadAlerts}
+              </span>
+            )}
           </NavLink>
-          <NavLink to="/settings" className="flex items-center px-3 py-2 rounded-lg text-sm font-medium hover:bg-slate-800/50 hover:text-white transition-colors duration-200">
+          <NavLink to="/settings" className={({ isActive }) => cn("flex items-center px-3 py-2 rounded-lg text-sm font-medium transition-colors duration-200", isActive ? "bg-slate-800 text-teal-400" : "hover:bg-slate-800/50 hover:text-white")}>
             <Settings className="w-5 h-5 mr-3 shrink-0" /> CONFIGURACIÓN
           </NavLink>
         </div>
