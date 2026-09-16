@@ -13,6 +13,7 @@ import { Login } from './pages/Login';
 import { Performance } from './pages/Performance';
 import { ControlCenter } from './pages/ControlCenter';
 import { AuditWorkspace } from './pages/AuditWorkspace';
+import { Settings } from './pages/Settings';
 import { AuthProvider, useAuth } from './context/AuthContext';
 
 const PlaceholderPage = ({ title }: { title: string }) => (
@@ -60,7 +61,7 @@ export default function App() {
           <Route path="/reports" element={<ProtectedRoute><PlaceholderPage title="Reporting Center" /></ProtectedRoute>} />
           <Route path="/calendar" element={<ProtectedRoute><PlaceholderPage title="Calendario" /></ProtectedRoute>} />
           <Route path="/alerts" element={<ProtectedRoute><AlertCenter /></ProtectedRoute>} />
-          <Route path="/settings" element={<ProtectedRoute><PlaceholderPage title="Configuración" /></ProtectedRoute>} />
+          <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
         </Routes>
       </BrowserRouter>
     </AuthProvider>
