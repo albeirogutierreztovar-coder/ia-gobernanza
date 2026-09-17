@@ -32,6 +32,12 @@ interface AppState {
   addCalendarEvent: (event: any) => Promise<void>;
   updateCalendarEvent: (id: string, updates: any) => Promise<void>;
   deleteCalendarEvent: (id: string) => Promise<void>;
+  addEvidence: (evidence: any) => Promise<void>;
+  updateEvidence: (id: string, updates: any) => Promise<void>;
+  deleteEvidence: (id: string) => Promise<void>;
+  addDocument: (doc: any) => Promise<void>;
+  updateDocument: (id: string, updates: any) => Promise<void>;
+  deleteDocument: (id: string) => Promise<void>;
 }
 
 const getStorageKey = (orgId: string) => `app_data_${orgId}`;
@@ -535,6 +541,142 @@ export const useStore = create<AppState>((set, get) => ({
     saveToLocalStorage(currentData.organization.id, updated);
   },
 
+  addEvidence: async (evidence: any) => {
+    let id = `ev-${Date.now()}`;
+    try {
+      if (auth.currentUser) {
+        const docRef = await addDoc(collection(db, 'evidences'), {
+          ...evidence,
+          createdAt: serverTimestamp()
+        });
+        id = docRef.id;
+      }
+    } catch (e) {
+      console.warn('Firestore evidence write skipped or failed:', e);
+    }
+
+    const currentData = get().data;
+    if (currentData) {
+      const newEv = { id, ...evidence };
+      const updated = {
+        ...currentData,
+        evidences: [newEv, ...(currentData.evidences || [])]
+      };
+      set({ data: updated });
+      saveToLocalStorage(currentData.organization.id, updated);
+    }
+  },
+
+  updateEvidence: async (id: string, updates: any) => {
+    const currentData = get().data;
+    if (!currentData || !currentData.evidences) return;
+
+    try {
+      if (auth.currentUser) {
+        const docRef = doc(db, 'evidences', id);
+        await updateDoc(docRef, updates);
+      }
+    } catch (e) {
+      console.warn('Firestore evidence update skipped or failed:', e);
+    }
+
+    const updated = {
+      ...currentData,
+      evidences: currentData.evidences.map(e => e.id === id ? { ...e, ...updates } : e)
+    };
+    set({ data: updated });
+    saveToLocalStorage(currentData.organization.id, updated);
+  },
+
+  deleteEvidence: async (id: string) => {
+    const currentData = get().data;
+    if (!currentData || !currentData.evidences) return;
+
+    try {
+      if (auth.currentUser) {
+        const docRef = doc(db, 'evidences', id);
+        await deleteDoc(docRef);
+      }
+    } catch (e) {
+      console.warn('Firestore evidence delete skipped or failed:', e);
+    }
+
+    const updated = {
+      ...currentData,
+      evidences: currentData.evidences.filter(e => e.id !== id)
+    };
+    set({ data: updated });
+    saveToLocalStorage(currentData.organization.id, updated);
+  },
+
+  addDocument: async (docData: any) => {
+    let id = `doc-${Date.now()}`;
+    try {
+      if (auth.currentUser) {
+        const docRef = await addDoc(collection(db, 'documents'), {
+          ...docData,
+          createdAt: serverTimestamp()
+        });
+        id = docRef.id;
+      }
+    } catch (e) {
+      console.warn('Firestore document write skipped or failed:', e);
+    }
+
+    const currentData = get().data;
+    if (currentData) {
+      const newDoc = { id, ...docData };
+      const updated = {
+        ...currentData,
+        documents: [newDoc, ...(currentData.documents || [])]
+      };
+      set({ data: updated });
+      saveToLocalStorage(currentData.organization.id, updated);
+    }
+  },
+
+  updateDocument: async (id: string, updates: any) => {
+    const currentData = get().data;
+    if (!currentData || !currentData.documents) return;
+
+    try {
+      if (auth.currentUser) {
+        const docRef = doc(db, 'documents', id);
+        await updateDoc(docRef, updates);
+      }
+    } catch (e) {
+      console.warn('Firestore document update skipped or failed:', e);
+    }
+
+    const updated = {
+      ...currentData,
+      documents: currentData.documents.map(d => d.id === id ? { ...d, ...updates } : d)
+    };
+    set({ data: updated });
+    saveToLocalStorage(currentData.organization.id, updated);
+  },
+
+  deleteDocument: async (id: string) => {
+    const currentData = get().data;
+    if (!currentData || !currentData.documents) return;
+
+    try {
+      if (auth.currentUser) {
+        const docRef = doc(db, 'documents', id);
+        await deleteDoc(docRef);
+      }
+    } catch (e) {
+      console.warn('Firestore document delete skipped or failed:', e);
+    }
+
+    const updated = {
+      ...currentData,
+      documents: currentData.documents.filter(d => d.id !== id)
+    };
+    set({ data: updated });
+    saveToLocalStorage(currentData.organization.id, updated);
+  },
+
   fetchData: async (orgId: string) => {
     set({ loading: true, error: null });
 
@@ -558,7 +700,7 @@ export const useStore = create<AppState>((set, get) => ({
             'processInputs', 'processOutputs', 'processActivities', 'stakeholders', 'governanceRoles',
             'objectives', 'indicators', 'indicatorMeasurements', 'processDependencies', 'processHistory',
             'aiImpactAssessments', 'aiDataResources', 'aiLifecycleEvents', 'aiIncidents', 'aiProviders', 'aiHistory',
-            'nonConformities', 'capas', 'normativeControls', 'auditSessions', 'calendarEvents'
+            'nonConformities', 'capas', 'normativeControls', 'auditSessions', 'calendarEvents', 'evidences', 'documents'
           ];
 
           const results = await Promise.all(collectionsToFetch.map(async (coll) => {
@@ -605,6 +747,8 @@ export const useStore = create<AppState>((set, get) => ({
             normativeControls: (results[29] as any[]).length > 0 ? (results[29] as any[]) : initialDashboardData.normativeControls,
             auditSessions: (results[30] as any[]).length > 0 ? (results[30] as any[]) : initialDashboardData.auditSessions,
             calendarEvents: (results[31] as any[]).length > 0 ? (results[31] as any[]) : initialDashboardData.calendarEvents,
+            evidences: (results[32] as any[]).length > 0 ? (results[32] as any[]) : initialDashboardData.evidences,
+            documents: (results[33] as any[]).length > 0 ? (results[33] as any[]) : initialDashboardData.documents,
           };
 
           set({ data: liveData, loading: false, error: null });
@@ -620,7 +764,9 @@ export const useStore = create<AppState>((set, get) => ({
     const finalData = cached ? {
       ...initialDashboardData,
       ...cached,
-      calendarEvents: (cached.calendarEvents && cached.calendarEvents.length > 0) ? cached.calendarEvents : initialDashboardData.calendarEvents
+      calendarEvents: (cached.calendarEvents && cached.calendarEvents.length > 0) ? cached.calendarEvents : initialDashboardData.calendarEvents,
+      evidences: (cached.evidences && cached.evidences.length > 0) ? cached.evidences : initialDashboardData.evidences,
+      documents: (cached.documents && cached.documents.length > 0) ? cached.documents : initialDashboardData.documents
     } : initialDashboardData;
     set({ data: finalData, loading: false, error: null });
     saveToLocalStorage(orgId, finalData);

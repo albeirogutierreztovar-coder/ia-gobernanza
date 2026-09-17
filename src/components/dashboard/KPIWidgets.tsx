@@ -83,8 +83,8 @@ function KpiCard({
               : "En Atención"}
         </span>
         <button 
-          onClick={() => alert("Los detalles completos de métricas avanzadas estarán disponibles en el Dashboard V2.")}
-          className="text-xs font-semibold text-slate-500 hover:text-slate-800 uppercase focus:outline-none focus:underline"
+          onClick={onExplore}
+          className="text-xs font-semibold text-teal-600 hover:text-teal-800 uppercase focus:outline-none hover:underline cursor-pointer"
         >
           Ver Detalle
         </button>
@@ -225,8 +225,8 @@ export function KPIWidgets({ kpis, compare }: { kpis: any; compare: boolean }) {
         />
         <KpiCard
           title="Risk Exposure"
-          value={45}
-          previousValue={50}
+          value={kpis?.riskExposure ?? 35}
+          previousValue={(kpis?.riskExposure ?? 35) + 4}
           color="#f43f5e"
           icon={ShieldAlert}
           compare={compare}

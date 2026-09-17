@@ -306,6 +306,46 @@ export interface DashboardData {
   normativeControls?: NormativeControl[];
   auditSessions?: AuditSession[];
   calendarEvents?: CalendarEvent[];
+  evidences?: EvidenceItem[];
+  documents?: GovernanceDocument[];
+}
+
+export interface EvidenceItem {
+  id: string;
+  organizationId: string;
+  name: string;
+  description: string;
+  owner: string;
+  process: string;
+  standard: 'ISO/IEC 27001' | 'ISO/IEC 42001' | 'Integrado';
+  controlId?: string;
+  controls?: number;
+  controlCode?: string;
+  status: 'Vigente' | 'Por vencer' | 'Pendiente de revisión' | 'Vencida' | 'Rechazada';
+  date: string;
+  expires: string;
+  fileUrl?: string;
+  fileType?: string;
+  fileSize?: string;
+  reviewedBy?: string;
+  reviewDate?: string;
+}
+
+export interface GovernanceDocument {
+  id: string;
+  organizationId: string;
+  code: string;
+  name: string;
+  type: 'Política' | 'Manual' | 'Procedimiento' | 'Matriz' | 'Plan' | 'Guía' | 'Protocolo' | 'Registro';
+  process: string;
+  standard: 'ISO/IEC 27001' | 'ISO/IEC 42001' | 'Integrado';
+  status: 'Vigente' | 'En revisión' | 'Obsoleto' | 'Borrador';
+  currentVersion: string;
+  date: string;
+  description?: string;
+  author?: string;
+  approver?: string;
+  fileUrl?: string;
 }
 
 export interface ImplementationAction {
